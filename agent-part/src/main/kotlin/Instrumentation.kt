@@ -16,11 +16,14 @@
 package com.epam.drill.plugins.test2code
 
 import com.epam.drill.logger.api.*
+import com.epam.drill.plugins.test2code.common.api.*
 import drill.jacoco.*
 import drill.jacoco.BitSetProbeInserter.*
+import kotlinx.atomicfu.*
 import org.jacoco.core.internal.flow.*
 import org.jacoco.core.internal.instr.*
 import org.objectweb.asm.*
+
 
 /**
  * Instrumenter type
@@ -46,28 +49,51 @@ private class CustomInstrumenter(
         null
     }
 
-    fun instrument(className: String, classId: Long, classBody: ByteArray): ByteArray {
+    fun instrument(className: String, classId: Long, classBody: ByteArray): ByteArray? {
         val version = InstrSupport.getMajorVersion(classBody)
 
         //count probes before transformation
         val counter = ProbeCounter()
         val reader = InstrSupport.classReaderFor(classBody)
-        reader.accept(ClassProbesAdapter(counter, false), 0)
+        val superName = reader.superName
+        if (superName == "zeyt/model/BaseObject" || superName == "zeyt/model/BaseCompanyObject") {
+            logger.info { "skipped class transformation $className" }
+            return null
+        }
+        if (className.startsWith("zeyt/cache") ||
+            className.startsWith("zeyt/log") ||
+            className.startsWith("zeyt/sql") ||
+            className.startsWith("zeyt/web/menu")
+        )
+            return null
+        reader.accept(DrillClassProbesAdapter(counter, false), 0)
 
+        val genId = asd.incrementAndGet()
+        val probeCount = counter.count
         val strategy = DrillProbeStrategy(
             probeArrayProvider,
             className,
             classId,
-            counter.count
+            genId,
+            probeCount
         )
         val writer = object : ClassWriter(reader, 0) {
             override fun getCommonSuperClass(type1: String, type2: String): String = throw IllegalStateException()
         }
-        val visitor = ClassProbesAdapter(
+        val visitor = DrillClassProbesAdapter(
             DrillClassInstrumenter(strategy, className, writer),
             InstrSupport.needsFrames(version)
         )
         reader.accept(visitor, ClassReader.EXPAND_FRAMES)
+
+
+
+        ProbeManager.addDescriptor(genId,  ProbeDescriptor(
+            id = classId,
+            name = className,
+            probeCount = probeCount
+        ))
+
         return writer.toByteArray()
     }
 }
@@ -88,11 +114,14 @@ private class ProbeCounter : ClassProbesVisitor() {
 
 }
 
+val asd = atomic(0)
+
 
 private class DrillProbeStrategy(
     private val probeArrayProvider: ProbeArrayProvider,
     private val className: String,
     private val classId: Long,
+    private val number: Int,
     private val probeCount: Int
 ) : IProbeArrayStrategy {
     override fun storeInstance(mv: MethodVisitor?, clinit: Boolean, variable: Int): Int = mv!!.run {
@@ -101,27 +130,24 @@ private class DrillProbeStrategy(
         // Stack[0]: Lcom/epam/drill/jacoco/Stuff;
 
         visitLdcInsn(classId)
+        visitLdcInsn(number)
         visitLdcInsn(className)
-        visitLdcInsn(probeCount + 1)//bitset magic
+        visitLdcInsn(probeCount)
         visitMethodInsn(
-            Opcodes.INVOKEVIRTUAL, drillClassName, "invoke", "(JLjava/lang/String;I)L$PROBE_IMPL;",
+            Opcodes.INVOKEVIRTUAL, drillClassName, "invoke", "(JILjava/lang/String;I)L$PROBE_IMPL;",
             false
         )
         visitVarInsn(Opcodes.ASTORE, variable)
-        mv.setTrueToLastIndex(variable)//bitset magic
-        5 //stack size
+
+        6 //stack size
     }
 
-    private fun MethodVisitor.setTrueToLastIndex(variable: Int) {
-        visitVarInsn(Opcodes.ALOAD, variable)
-        InstrSupport.push(this, probeCount)
-        visitMethodInsn(
-            Opcodes.INVOKEVIRTUAL, PROBE_IMPL, "set", "(I)V",
-            false
-        )
+    override fun addMembers(cv: ClassVisitor?, probeCount: Int) {
+
+//        createDataField(cv)
     }
 
-    override fun addMembers(cv: ClassVisitor?, probeCount: Int) {}
+
 }
 
 class DrillClassInstrumenter(

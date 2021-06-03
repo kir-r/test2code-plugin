@@ -12,6 +12,7 @@
  *******************************************************************************/
 package drill.jacoco;
 
+import com.epam.drill.plugins.test2code.common.api.AgentProbes;
 import org.jacoco.core.internal.instr.*;
 import org.objectweb.asm.*;
 
@@ -24,7 +25,7 @@ import org.objectweb.asm.*;
  */
 public class BitSetProbeInserter extends MethodVisitor {
 
-    public final static String PROBE_IMPL = "java/util/BitSet";
+    public final static String PROBE_IMPL = AgentProbes.class.getCanonicalName().replace(".", "/");
     private final IProbeArrayStrategy arrayStrategy;
 
     /**
@@ -89,12 +90,12 @@ public class BitSetProbeInserter extends MethodVisitor {
     }
 
     /**
-     *         visitVarInsn(Opcodes.ALOAD, variable)
-     *         InstrSupport.push(this, probeCount)
-     *         visitMethodInsn(
-     *             Opcodes.INVOKEVIRTUAL, PROBE_IMPL, "set", "(I)V",
-     *             false
-     *         )
+     * visitVarInsn(Opcodes.ALOAD, variable)
+     * InstrSupport.push(this, probeCount)
+     * visitMethodInsn(
+     * Opcodes.INVOKEVIRTUAL, PROBE_IMPL, "set", "(I)V",
+     * false
+     * )
      */
 
     @Override

@@ -19,54 +19,90 @@ import com.epam.drill.instrumentation.data.*
 import com.epam.drill.plugins.test2code.*
 import org.openjdk.jmh.annotations.*
 import org.openjdk.jmh.annotations.Scope
+import org.openjdk.jmh.infra.*
 import java.util.concurrent.*
 
 @State(Scope.Benchmark)
-@Fork(1)
+@Fork(2)
 @Warmup(iterations = 5)
-@Measurement(iterations = 15, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 10, timeUnit = TimeUnit.MILLISECONDS)
 class CoverageBenchmark {
 
+    val instrumentation = InstrumentationForTest(WtfClass::class)
+        .apply {
+            InstrumentationForTest.TestProbeArrayProvider.start(InstrumentationForTest.sessionId, false)
+        }
+
+    val times = 9000000
+
+//    val arr = Array<Int>(times) { it }
+//    val arrLists =arr.toList()
+//    val arrList = ArrayList<Int>(arr.toList())
+//    val copyOnWriteArrayList = CopyOnWriteArrayList(arr.toList())
+//    val mp = arr.associateWith { it }
+
+//    @Benchmark
+//    @BenchmarkMode(Mode.Throughput)
+//    @Threads(Threads.MAX)
+//    fun arrayAccess(blackhole: Blackhole) {
+//        (0 until times).forEach {
+//            blackhole.consume(arr[it])
+//        }
+//    }
+//
+//    @Benchmark
+//    @BenchmarkMode(Mode.Throughput)
+//    @Threads(Threads.MAX)
+//    fun copyOnWriteArrayList(blackhole: Blackhole) {
+//        (0 until times).forEach {
+//            blackhole.consume(copyOnWriteArrayList[it])
+//        }
+//    }
+//
+//    @Benchmark
+//    @BenchmarkMode(Mode.Throughput)
+//    @Threads(Threads.MAX)
+//    fun arrayListSAccess(blackhole: Blackhole) {
+//        (0 until times).forEach {
+//            blackhole.consume(arrLists[it])
+//        }
+//    }
+//
+//    @Benchmark
+//    @BenchmarkMode(Mode.Throughput)
+//    @Threads(Threads.MAX)
+//    fun arrayListAccess(blackhole: Blackhole) {
+//        (0 until times).forEach {
+//            blackhole.consume(arrList[it])
+//        }
+//    }
+//
+//    @Benchmark
+//    @BenchmarkMode(Mode.Throughput)
+//    @Threads(Threads.MAX)
+//    fun mapAccess(blackhole: Blackhole) {
+//        (0 until times).forEach {
+//            blackhole.consume(mp[it])
+//        }
+//    }
+
     @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    fun cyclesWithoutInstrumentation() {
-        val instrumentation = InstrumentationForTest(InvokeCycles::class)
-        instrumentation.runNonInstrumentedClass()
+    @BenchmarkMode(Mode.Throughput)
+    @Threads(Threads.MAX)
+    fun pureClassTest() {
+
+        repeat(times) {
+            instrumentation.runNonInstrumentedClass()
+        }
     }
 
     @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    fun cyclesWithInstrumentation() {
-        val instrumentation = InstrumentationForTest(InvokeCycles::class)
-        instrumentation.runClass()
-    }
-
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    fun cyclesWithCollectCoverage() {
-        val instrumentation = InstrumentationForTest(InvokeCycles::class)
-        instrumentation.collectCoverage()
-    }
-
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    fun conditionsWithoutInstrumentation() {
-        val instrumentation = InstrumentationForTest(InvokeBigConditions::class)
-        instrumentation.runNonInstrumentedClass()
-    }
-
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    fun conditionsWithInstrumentation() {
-        val instrumentation = InstrumentationForTest(InvokeBigConditions::class)
-        instrumentation.runClass()
-    }
-
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    fun conditionsWithCollectCoverage() {
-        val instrumentation = InstrumentationForTest(InvokeBigConditions::class)
-        instrumentation.collectCoverage()
+    @BenchmarkMode(Mode.Throughput)
+    @Threads(Threads.MAX)
+    fun instrumentedClassTest() {
+        repeat(times) {
+            instrumentation.xx()
+        }
     }
 
 }

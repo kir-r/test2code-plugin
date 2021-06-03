@@ -22,6 +22,7 @@ import com.epam.drill.plugins.test2code.common.api.*
 import kotlinx.atomicfu.*
 import kotlinx.serialization.json.*
 import org.jacoco.core.internal.data.*
+import java.util.concurrent.*
 
 @Suppress("unused")
 class Plugin(
@@ -161,6 +162,34 @@ class Plugin(
         }
     }
 
+
+    fun requestAccepted() {
+        val sessionId = context()
+        val testName = context[DRIlL_TEST_NAME] ?: "unspecified"
+        val drillProbeArrayProvider = instrContext as DrillProbeArrayProvider
+        val execRuntime = runtimes[sessionId]
+        if (execRuntime != null) {
+            val orPut = execRuntime._execData.getOrPut(testName) {
+                arrayOfNulls<ExecDatum>(50_000).apply {
+                    ProbeManager.probesDescriptor.forEachIndexed { inx, probeDescriptor ->
+                        if (probeDescriptor != null)
+                            this[inx] = ExecDatum(
+                                id = probeDescriptor.id,
+                                name = probeDescriptor.name,
+                                probes = AgentProbes(probeDescriptor.probeCount),
+                                testName = testName
+                            )
+                    }
+                }
+            }
+            drillProbeArrayProvider.requestThreadLocal.set(orPut)
+        } else {
+            drillProbeArrayProvider.requestThreadLocal.remove()
+        }
+
+    }
+
+
     override fun parseAction(
         rawAction: String
     ): AgentAction = json.decodeFromString(AgentAction.serializer(), rawAction)
@@ -170,7 +199,8 @@ fun Plugin.probeSender(
     sessionId: String,
     sendChanged: Boolean = false
 ): RealtimeHandler = { execData ->
-    execData.map(ExecDatum::toExecClassData)
+    execData
+        .map(ExecDatum::toExecClassData)
         .chunked(0xffff)
         .map { chunk -> CoverDataPart(sessionId, chunk) }
         .sumBy { message ->

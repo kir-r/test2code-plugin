@@ -79,6 +79,12 @@ class InstrumentationForTest(kClass: KClass<*>) {
 
     private val _runtimeData = atomic(persistentListOf<ExecDatum>())
 
+    fun xx() {
+        @Suppress("DEPRECATION")
+        val runnable = instrumentedClass.newInstance() as Runnable
+        runnable.run()
+    }
+
     fun collectCoverage(isInvokedRunnable: Boolean = true): ICounter? {
         TestProbeArrayProvider.start(sessionId, false)
         if (isInvokedRunnable) {
@@ -90,7 +96,7 @@ class InstrumentationForTest(kClass: KClass<*>) {
             it + (TestProbeArrayProvider.stop(sessionId) ?: emptySequence())
         }
         val executionData = ExecutionDataStore()
-        runtimeData.forEach { executionData.put(ExecutionData(it.id, it.name, it.probes.toBooleanArray())) }
+        runtimeData.forEach { executionData.put(ExecutionData(it.id, it.name, it.probes.bool)) }
         val coverageBuilder = CoverageBuilder()
         val analyzer = Analyzer(executionData, coverageBuilder)
         analyzer.analyzeClass(originalBytes, instrumentedClass.name)

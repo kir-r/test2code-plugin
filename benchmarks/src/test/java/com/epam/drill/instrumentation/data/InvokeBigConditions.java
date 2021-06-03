@@ -21,16 +21,15 @@ public class InvokeBigConditions implements Runnable {
 
     @Override
     public void run() {
-        Random random = new Random();
-        long i = methodIfAndInFor(random.nextInt());
-        System.out.println("res====" + i);
+        Random random = new Random(50);
+        methodIfAndInFor(random.nextInt());
     }
 
     public int methodIfAndInFor(int s) {
         int sum = s;
-        Random random = new Random();
+        Random random = new Random(50);
         int firstRange = 3;
-        int toMin = 100_000;
+        int toMin = 10_000;
         int toMax = 100;
         for (int i = random.nextInt(firstRange); i <= random.nextInt(toMax) + toMin; i++) {
             sum += methodIfWithAnd(s);
@@ -44,7 +43,7 @@ public class InvokeBigConditions implements Runnable {
 
     int methodWithCondition() {
         int sum = 0;
-        Random random = new Random();
+        Random random = new Random(50);
         if (isaBoolean(random)) {
             sum += 110;
             if ((int) (Math.random() * 10000) % 2 == 0 | random.nextInt(100) + 1 > random.nextInt(200) | random.nextInt(100) + 2 > random.nextInt(200) | random.nextInt(100) + 3 > random.nextInt(200) | random.nextInt(100) + 4 > random.nextInt(200) | random.nextInt(100) + 5 > random.nextInt(200) | random.nextInt(100) + 6 > random.nextInt(200) | random.nextInt(100) + 7 > random.nextInt(200) | random.nextInt(100) + 8 > random.nextInt(200) | random.nextInt(100) + 9 > random.nextInt(200) | random.nextInt(100) + 10 > random.nextInt(200) | random.nextInt(100) + 11 > random.nextInt(200) | random.nextInt(100) + 12 > random.nextInt(200) | random.nextInt(100) + 13 > random.nextInt(200) | random.nextInt(100) + 14 > random.nextInt(200) | random.nextInt(100) + 15 > random.nextInt(200) | random.nextInt(100) + 16 > random.nextInt(200) | random.nextInt(100) + 17 > random.nextInt(200) | random.nextInt(100) + 18 > random.nextInt(200) | random.nextInt(100) >= random.nextInt(200)) {
@@ -115,7 +114,7 @@ public class InvokeBigConditions implements Runnable {
 
     int methodIfWithAnd(int s) {
         int sum = s;
-        Random random = new Random();
+        Random random = new Random(50);
         if (isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random) & isaBoolean(random)) {
             sum += 1000;
         } else {
@@ -126,7 +125,7 @@ public class InvokeBigConditions implements Runnable {
 
     int methodIfAndAndOrOr(int s) {
         int sum = s;
-        Random random = new Random();
+        Random random = new Random(50);
         if (((int) (Math.random() * 10000) % 2 == 0 || random.nextInt(100) + 1 > random.nextInt(200) || random.nextInt(100) + 2 > random.nextInt(200))
                 && ((int) (Math.random() * 10000) % 2 == 0 || random.nextInt(100) + 1 > random.nextInt(200) || random.nextInt(100) + 2 > random.nextInt(200))
                 && ((int) (Math.random() * 10000) % 2 == 0 || random.nextInt(100) + 1 > random.nextInt(200) || random.nextInt(100) + 2 > random.nextInt(200))

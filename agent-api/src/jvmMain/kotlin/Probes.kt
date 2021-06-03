@@ -4,8 +4,28 @@ import java.util.*
 
 actual typealias Probes = BitSet
 
-class ProbesStub(size: Int = 0) : BitSet(size) {
-    override fun set(bitIndex: Int) {}
+open class AgentProbes(size: Int = 0) {
+    val bool = BooleanArray(size)
 
-    override fun set(bitIndex: Int, value: Boolean) {}
+    open fun set(index: Int) {
+        if (!bool[index])
+            bool[index] = true
+    }
+
+    fun get(index: Int): Boolean {
+        return bool[index]
+    }
+
+    fun reset() {
+        (bool.indices).forEach {
+            bool[it] = false
+        }
+    }
+
+}
+
+class StubAgentProbes(size: Int = 0) : AgentProbes(size) {
+    override fun set(index: Int) {
+    }
+
 }

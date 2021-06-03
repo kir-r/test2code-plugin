@@ -2,6 +2,7 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     `maven-publish`
+    java
 }
 
 kotlin {
@@ -11,5 +12,11 @@ kotlin {
         }
     }
 
-    jvm()
+    jvm{
+        compilations["main"].defaultSourceSet {
+            dependencies {
+                implementation(project(":experimental"))
+            }
+        }
+    }
 }

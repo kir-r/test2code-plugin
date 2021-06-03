@@ -19,6 +19,9 @@ class TestTarget : Runnable {
 
     override fun run() {
         isPrime(7)
+        isPrime(7)
+        isPrime(7)
+        isPrime(7)
         isPrime(12)
     }
 

@@ -18,6 +18,8 @@ dependencies {
     jarDeps("org.jetbrains.kotlinx:kotlinx-collections-immutable-jvm") { isTransitive = false }
 
     implementation(kotlin("stdlib"))
+    implementation(project(":experimental"))
+    jarDeps(project(":experimental"))
 
     //provided by drill runtime
     implementation("com.epam.drill:drill-agent-part")

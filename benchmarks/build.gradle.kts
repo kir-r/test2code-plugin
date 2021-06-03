@@ -31,6 +31,7 @@ dependencies {
     testImplementation(project(":tests"))
     testImplementation(project(":agent-part"))
 
+    testImplementation(project(":experimental"))
     testImplementation("com.epam.drill:common")
     testImplementation("com.epam.drill:drill-agent-part")
     testImplementation("com.epam.drill:drill-admin-part")

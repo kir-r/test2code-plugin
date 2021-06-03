@@ -18,7 +18,8 @@ kotlin.sourceSets.all {
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
-
+    implementation(project(":experimental"))
+    jarDeps(project(":experimental"))
     //plugin dependencies
     jarDeps(project(":api"))
     jarDeps(project(":agent-api"))
