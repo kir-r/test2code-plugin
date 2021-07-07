@@ -24,8 +24,9 @@ import com.epam.kodux.util.*
 import kotlinx.atomicfu.*
 import kotlinx.collections.immutable.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
 import kotlinx.serialization.*
+import java.util.*
+import java.util.concurrent.*
 
 private val logger = logger {}
 
@@ -86,16 +87,23 @@ class ActiveSession(
             }
         }
     }.also {
-        channel.send(dataPart.asSequence().map { it.testName.weakIntern().typedTest(testType.weakIntern()) }.distinct())
+        que.add(dataPart.asSequence().map { it.testName.weakIntern().typedTest(testType.weakIntern()) }.distinct())
     }
 
-    private val channel = Channel<Sequence<TypedTest>>()
+    private val que: Queue<Sequence<TypedTest>> = LinkedBlockingDeque()
 
-    //TODO rewrite
+    //TODO FIX THIS
+    var flag = true
+
     private val activeSessionJob = AsyncJobDispatcher.launch {
-        for (tests in channel) {
+        while (flag) {
             _handler.value?.let {
-                it(_probes.value.asSequence().filter { tests.contains(it.key) }
+                delay(5000)
+                val data = mutableSetOf<TypedTest>()
+                while (!que.isEmpty()) {
+                    data.addAll(que.poll())
+                }
+                it(_probes.value.asSequence().filter { data.contains(it.key) }
                     .associate { it.key to it.value.values.asSequence() })
             }
         }
@@ -115,7 +123,7 @@ class ActiveSession(
 
     suspend fun finish() = _probes.value.run {
         logger.debug { "ActiveSession finish with size = ${_probes.value.size} " }
-        channel.close()
+        flag = false
         activeSessionJob.join()
         logger.debug { "BundleByTests in cache ${bundleByTests.map.keys.size}" }
         classBytes.update { null }
