@@ -58,7 +58,7 @@ private fun Sequence<ExecClassData>.bundle(
     analyze: ExecutionDataStore.(Analyzer) -> Unit,
 ): IBundleCoverage = CustomCoverageBuilder().also { coverageBuilder ->
     val dataStore = execDataStore(probeIds)
-    val analyzer = Analyzer(dataStore, coverageBuilder).fixConcurrencyIssues()
+    val analyzer = threadSafeAnalyzer(dataStore, coverageBuilder)
     dataStore.analyze(analyzer)
 }.getBundle("")
 
@@ -186,7 +186,10 @@ private fun ExecClassData.toExecutionData(probeIds: Map<String, Long>): Executio
     ExecutionData(it, className, probes.toBooleanArray())
 }
 
-private fun Analyzer.fixConcurrencyIssues() = also { analyzer ->
+private fun threadSafeAnalyzer(
+    dataStore: ExecutionDataStore,
+    coverageBuilder: CustomCoverageBuilder,
+): Analyzer = Analyzer(dataStore, coverageBuilder).also { analyzer ->
     val newPool = StringPool()
     StringPool::class.java.getDeclaredField("pool").apply {
         isAccessible = true
@@ -198,5 +201,4 @@ private fun Analyzer.fixConcurrencyIssues() = also { analyzer ->
         set(analyzer, newPool)
         isAccessible = false
     }
-
 }

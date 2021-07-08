@@ -67,6 +67,9 @@ class ActiveSession(
 
     private val _testRun = atomic<TestRun?>(null)
 
+
+    val bundleByTests = AtomicCache<TypedTest, BundleCounter>()
+
     suspend fun addAll(dataPart: Collection<ExecClassData>) = dataPart.map { probe ->
         probe.id?.let { probe } ?: probe.copy(id = probe.id())
     }.forEach { probe ->
@@ -109,8 +112,6 @@ class ActiveSession(
         }
     }
 
-    val bundleByTests = AtomicCache<TypedTest, BundleCounter>()
-
     fun setTestRun(testRun: TestRun) {
         _testRun.update { current ->
             current?.let { it + testRun } ?: testRun
@@ -140,7 +141,7 @@ class ActiveSession(
                 )
             } ?: emptyMap(),
             probes = values.flatMap { it.values },
-            sessionData = SessionData(bundleByTests.map)
+            cached = bundleByTests.map
         )
     }
 }
@@ -152,9 +153,8 @@ data class FinishedSession(
     override val tests: Set<TypedTest>,
     override val testStats: Map<TypedTest, TestStats> = emptyMap(),
     val probes: List<ExecClassData>,
-    @Transient
     @kotlin.jvm.Transient
-    val sessionData: SessionData = SessionData.emptySessionData,
+    val cached: Map<TypedTest, BundleCounter> = emptyMap(),
 ) : Session(), JvmSerializable {
     override fun iterator(): Iterator<ExecClassData> = probes.iterator()
 

@@ -98,7 +98,7 @@ private suspend fun FinishedScope.withProbes(
     storeClient: StoreClient,
 ): FinishedScope = data?.let {
     val scopeData: ScopeData = it.bytes
-    val sessions = storeClient.loadSessions(id, true)
+    val sessions = storeClient.loadSessions(id)
     logger.debug { "take scope $id $name with sessions size ${sessions.size}" }
     copy(data = scopeData.copy(sessions = sessions))
 } ?: this

@@ -25,6 +25,7 @@ import kotlinx.collections.immutable.*
 import org.jacoco.core.data.*
 import java.io.*
 import java.util.stream.*
+import kotlin.streams.*
 
 private val logger = logger {}
 
@@ -67,7 +68,7 @@ internal fun Sequence<Session>.calcBundleCounters(
     )
 }
 
-internal suspend fun BundleCounters.calculateCoverageData(
+internal fun BundleCounters.calculateCoverageData(
     context: CoverContext,
     scope: Scope? = null,
 ): CoverageInfoSet {
@@ -169,8 +170,8 @@ private fun Map<String, List<Session>>.bundlesByTests(
         val testsWithEmptyBundle = sessions.testsWithBundle()
         forEach { (testType, sessions) ->
             sessions.forEach { session ->
-                if (session is FinishedSession && !session.sessionData.bundleByTest.isNullOrEmpty()) {
-                    testsWithEmptyBundle.putAll(session.sessionData.bundleByTest)
+                if (session is FinishedSession && !session.cached.isNullOrEmpty()) {
+                    testsWithEmptyBundle.putAll(session.cached)
                 } else {
                     session.asSequence()
                         .groupBy { TypedTest(it.testName, testType) }
@@ -182,7 +183,6 @@ private fun Map<String, List<Session>>.bundlesByTests(
         }
         testsWithEmptyBundle
     } ?: emptyMap()
-
 }
 
 

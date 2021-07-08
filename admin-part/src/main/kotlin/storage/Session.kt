@@ -39,19 +39,10 @@ data class StoredSessionData(
 
 internal suspend fun StoreClient.loadSessions(
     scopeId: String,
-    withData: Boolean = false,
 ): List<FinishedSession> = trackTime("Load session") {
     findBy<StoredSession> {
         StoredSession::scopeId eq scopeId
-    }.map { storedSession ->
-        storedSession.data.let { session ->
-            session.takeIf { withData }?.copy(
-                sessionData = findById<StoredSessionData>(storedSession.id)?.let {
-                    SessionData(it.bundleByTest)
-                } ?: SessionData.emptySessionData
-            ) ?: session
-        }
-    }
+    }.map { it.data }
 }
 
 internal suspend fun StoreClient.storeSession(
@@ -65,15 +56,6 @@ internal suspend fun StoreClient.storeSession(
                 id = sessionUUID,
                 scopeId = scopeId,
                 data = session
-            )
-        )
-    }
-    trackTime("Store session data") {
-        val sessionData = session.sessionData
-        store(
-            StoredSessionData(
-                id = sessionUUID,
-                bundleByTest = sessionData.bundleByTest
             )
         )
     }
