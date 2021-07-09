@@ -27,17 +27,23 @@ import kotlinx.serialization.json.*
 import kotlinx.serialization.protobuf.*
 import org.jacoco.core.internal.data.*
 import org.mapdb.*
-import org.mapdb.Serializer
 import java.io.*
+import java.rmi.*
+import java.rmi.Remote
+import java.rmi.RemoteException
+import java.rmi.registry.*
+import java.rmi.server.*
 import java.util.*
+import kotlin.random.Random
+
 
 @Suppress("unused")
 class Plugin(
     id: String,
     agentContext: AgentContext,
     sender: Sender,
-    logging: LoggerFactory
-) : AgentPart<AgentAction>(id, agentContext, sender, logging), Instrumenter {
+    logging: LoggerFactory,
+) : AgentPart<AgentAction>(id, agentContext, sender, logging), Instrumenter{
     internal val logger = logging.logger("Plugin $id")
 
     internal val json = Json { encodeDefaults = true }
@@ -71,7 +77,7 @@ class Plugin(
                     coverDataPartJava
                 }.forEach { storageElement: CoverageInfo ->
                     val coverMessage = storageElement.coverMessage
-                    send(Base64.getEncoder().encodeToString(coverMessage))
+                    method.sendProbes(Base64.getEncoder().encodeToString(coverMessage))
                     val count = storageElement.count
                     if (storageElement.sendChanged && count > 0) {
                         //todo it not need so often
@@ -85,6 +91,13 @@ class Plugin(
                 delay(3000L)//todo need to custom
             }
         }
+    }
+
+    val method: RMI
+
+    init {
+        val registry = LocateRegistry.getRegistry(2732)
+        method = registry.lookup("UNIQUE_BINDING_NAME") as RMI
     }
     //TODO remove
     override fun setEnabled(enabled: Boolean) {
@@ -129,7 +142,7 @@ class Plugin(
 
     override fun instrument(
         className: String,
-        initialBytes: ByteArray
+        initialBytes: ByteArray,
     ): ByteArray? = takeIf { enabled }?.run {
         val idFromClassName = CRC64.classId(className.encodeToByteArray())
         instrumenter(className, idFromClassName, initialBytes)
@@ -232,7 +245,7 @@ class Plugin(
     }
 
     override fun parseAction(
-        rawAction: String
+        rawAction: String,
     ): AgentAction = json.decodeFromString(AgentAction.serializer(), rawAction)
 }
 
@@ -266,7 +279,8 @@ fun Plugin.sendMessage(message: CoverMessage) {
     send(messageStr)
 }
 
-private fun ByteArray.toCoverageInfo(sessionId: String, sendChanged: Boolean, count: Int) = CoverageInfo(sessionId, this, sendChanged, count)
+private fun ByteArray.toCoverageInfo(sessionId: String, sendChanged: Boolean, count: Int) =
+    CoverageInfo(sessionId, this, sendChanged, count)
 
 data class CoverageInfo(
     val sessionId: String,
@@ -288,6 +302,7 @@ data class CoverageInfo(
 
         return true
     }
+
     override fun hashCode(): Int {
         var result = sessionId.hashCode()
         result = 31 * result + coverMessage.contentHashCode()
@@ -295,4 +310,12 @@ data class CoverageInfo(
         result = 31 * result + count
         return result
     }
+}
+
+
+interface RMI : Remote {
+    @Throws(RemoteException::class)
+    fun sendProbes(
+        data: String,
+    )
 }

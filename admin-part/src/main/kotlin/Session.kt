@@ -70,7 +70,7 @@ class ActiveSession(
 
     val bundleByTests = AtomicCache<TypedTest, BundleCounter>()
 
-    suspend fun addAll(dataPart: Collection<ExecClassData>) = dataPart.map { probe ->
+    fun addAll(dataPart: Collection<ExecClassData>) = dataPart.map { probe ->
         probe.id?.let { probe } ?: probe.copy(id = probe.id())
     }.forEach { probe ->
         if (true in probe.probes) {

@@ -34,8 +34,12 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.json.*
 import kotlinx.serialization.protobuf.*
 import java.io.*
+import java.rmi.*
+import java.rmi.registry.*
+import java.rmi.server.*
 import java.util.*
 import java.util.concurrent.*
+
 
 object AsyncJobDispatcher : CoroutineScope {
     override val coroutineContext =
@@ -54,9 +58,15 @@ class Plugin(
     agentInfo = agentInfo,
     adminData = adminData,
     sender = sender
-), Closeable {
+), Closeable, RMI {
     companion object {
         val json = Json { encodeDefaults = true }
+    }
+
+    init {
+        val registry: Registry = LocateRegistry.createRegistry(2732)
+        val stub = UnicastRemoteObject.exportObject(this, 0)
+        registry.bind("UNIQUE_BINDING_NAME", stub)
     }
 
     internal val logger = logger(agentInfo.id)
@@ -615,7 +625,9 @@ class Plugin(
                             send(buildVersion, Routes.Build.Scopes.Scope.MethodsCoveredByTest.All(test), all)
                             send(buildVersion, Routes.Build.Scopes.Scope.MethodsCoveredByTest.Modified(test), modified)
                             send(buildVersion, Routes.Build.Scopes.Scope.MethodsCoveredByTest.New(test), new)
-                            send(buildVersion, Routes.Build.Scopes.Scope.MethodsCoveredByTest.Unaffected(test), unaffected)
+                            send(buildVersion,
+                                Routes.Build.Scopes.Scope.MethodsCoveredByTest.Unaffected(test),
+                                unaffected)
                         }
                     } ?: run {
                         Routes.Build.MethodsCoveredByTest(typedTest.id(), Routes.Build()).let { test ->
@@ -630,4 +642,19 @@ class Plugin(
             }
         }
     }
+
+    override fun sendProbes(data: String) {
+        val decode = Base64.getDecoder().decode(data)
+        val decompress = Zstd.decompress(decode, Zstd.decompressedSize(decode).toInt())
+        val message = ProtoBuf.decodeFromByteArray(CoverMessage.serializer(), decompress) as CoverDataPart
+        activeScope.addProbes(message.sessionId) { message.data }
+    }
+
+}
+
+interface RMI : Remote {
+    @Throws(RemoteException::class)
+    fun sendProbes(
+        data: String,
+    )
 }

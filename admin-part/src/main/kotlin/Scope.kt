@@ -151,7 +151,7 @@ class ActiveScope(
 
     fun hasActiveGlobalSession(): Boolean = "" in activeSessions
 
-    suspend fun addProbes(
+    fun addProbes(
         sessionId: String,
         probeProvider: () -> Collection<ExecClassData>,
     ): ActiveSession? = activeSessionOrNull(sessionId)?.apply { addAll(probeProvider()) }
