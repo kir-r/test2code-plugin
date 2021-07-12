@@ -29,12 +29,8 @@ import org.jacoco.core.internal.data.*
 import org.mapdb.*
 import java.io.*
 import java.rmi.*
-import java.rmi.Remote
-import java.rmi.RemoteException
 import java.rmi.registry.*
-import java.rmi.server.*
 import java.util.*
-import kotlin.random.Random
 
 
 @Suppress("unused")
@@ -60,11 +56,14 @@ class Plugin(
 
     private val _retransformed = atomic(false)
     private var db: DB
-    var probesDb: HTreeMap.KeySet<Any>
+    val probesDb: HTreeMap.KeySet<Any>
 
     init {
         Thread.currentThread().contextClassLoader = ClassLoader.getSystemClassLoader()
-        db = DBMaker.fileDB("test2code.db").closeOnJvmShutdown().make()
+        db = DBMaker.fileDB("test2code.db")
+            .transactionEnable()
+            .closeOnJvmShutdown()
+            .make()
         probesDb = db.hashSet("probes")
             .serializer(Serializer.JAVA)
             .createOrOpen()
