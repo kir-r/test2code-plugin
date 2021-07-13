@@ -71,6 +71,7 @@ internal suspend fun Plugin.changeActiveScope(
             if (prevScope.any()) {
                 logger.debug { "finish scope with id=${prevScope.id}" }.also { logPoolStats() }
                 val finishedScope = prevScope.finish(scopeChange.prevScopeEnabled)
+                state.setPrevScope(finishedScope)
                 state.scopeManager.store(finishedScope)
                 sendScopeSummary(finishedScope.summary)
                 logger.info { "$finishedScope has been saved." }.also { logPoolStats() }

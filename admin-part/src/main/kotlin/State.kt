@@ -49,6 +49,8 @@ internal class AgentState(
 
     val activeScope get() = _activeScope.value
 
+    val prevScope get() = _prevScope.getAndUpdate { null }
+
     val qualityGateSettings = AtomicCache<String, ConditionSetting>()
 
     private val _data = atomic<AgentData>(NoData)
@@ -60,6 +62,8 @@ internal class AgentState(
             buildVersion = agentInfo.buildVersion,
         )
     )
+
+    private val _prevScope = atomic<FinishedScope?>(null)
 
     suspend fun loadFromDb(block: suspend () -> Unit = {}) {
         logger.debug { "starting load ClassData from DB..." }
@@ -205,7 +209,7 @@ internal class AgentState(
     }
 
     internal suspend fun finishSession(
-        sessionId: String
+        sessionId: String,
     ): FinishedSession? = activeScope.finishSession(sessionId)?.also {
         if (it.any()) {
             logger.debug { "FinishSession. size of exec data = ${it.probes.size}" }.also { logPoolStats() }
@@ -215,7 +219,7 @@ internal class AgentState(
     }
 
     internal fun updateProbes(
-        buildScopes: Sequence<FinishedScope>
+        buildScopes: Sequence<FinishedScope>,
     ) {
         _coverContext.update {
             it?.copy(build = it.build.copy(probes = buildScopes.flatten().flatten().merge()))
@@ -223,7 +227,7 @@ internal class AgentState(
     }
 
     internal fun updateBundleCounters(
-        bundleCounters: BundleCounters
+        bundleCounters: BundleCounters,
     ): CachedBuild = updateBuild {
         copy(bundleCounters = bundleCounters)
     }
@@ -238,13 +242,13 @@ internal class AgentState(
 
     internal fun updateBuildStats(
         buildCoverage: BuildCoverage,
-        context: CoverContext
+        context: CoverContext,
     ): CachedBuild = updateBuild {
         copy(stats = buildCoverage.toCachedBuildStats(context))
     }
 
     private fun updateBuild(
-        updater: CachedBuild.() -> CachedBuild
+        updater: CachedBuild.() -> CachedBuild,
     ): CachedBuild = _coverContext.updateAndGet {
         it?.copy(build = it.build.updater())
     }!!.build
@@ -326,6 +330,8 @@ internal class AgentState(
         )
     }
 
+    internal fun setPrevScope(finishedScope: FinishedScope) = _prevScope.update { finishedScope }
+
     private fun scopeName(name: String) = when (val trimmed = name.trim()) {
         "" -> "$DEFAULT_SCOPE_NAME ${activeScope.nth + 1}"
         else -> trimmed
@@ -333,7 +339,7 @@ internal class AgentState(
 
     private fun PackageTree.toClassData(
         methods: List<Method>,
-        probeIds: Map<String, Long> = emptyMap()
+        probeIds: Map<String, Long> = emptyMap(),
     ) = ClassData(
         buildVersion = agentInfo.buildVersion,
         packageTree = this,

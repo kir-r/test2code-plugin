@@ -375,9 +375,10 @@ class Plugin(
     )
 
     internal suspend fun calculateAndSendBuildCoverage() {
+        val pereScope = state.prevScope.takeIf { it?.enabled == true }
         val scopes = state.scopeManager.run {
             byVersion(buildVersion, withData = true).enabled()
-        }
+        }.filter { it.id != pereScope?.id }.let { if (pereScope != null) it.plusElement(pereScope) else it }
         scopes.calculateAndSendBuildCoverage(state.coverContext())
     }
 
