@@ -17,7 +17,8 @@ package com.epam.drill.plugins.test2code
 
 import com.epam.drill.plugins.test2code.api.*
 import com.epam.drill.plugins.test2code.coverage.*
-import com.epam.drill.plugins.test2code.util.*
+import com.epam.drill.plugins.test2code.storage.*
+import com.epam.kodux.*
 import kotlinx.serialization.*
 
 @Serializable
@@ -98,12 +99,34 @@ internal fun BuildMethods.toSummaryDto() = MethodsSummaryDto(
     deleted = deletedMethods.run { Count(coveredCount, totalCount).toDto() }
 )
 
-internal fun DiffMethods.risks(
+internal suspend fun StoreClient.calculateRisks(
+    diffMethods: DiffMethods,
     bundleCounter: BundleCounter,
-): TypedRisks = bundleCounter.coveredMethods(new + modified).let { covered ->
+    baseline: String,
+): TypedRisks = bundleCounter.coveredMethods(diffMethods.new + diffMethods.modified).let { covered ->
+    val (newCovered, newUncovered) = diffMethods.new.partition { it in covered }
+    val (modifiedCovered, modifiedUncovered) = diffMethods.modified.partition { it in covered }
+    val baselineCoveredRisks = loadRisksByBaseline(baseline).let { risks ->
+        val coveredRisks = (risks.covered + (newCovered + modifiedCovered).map {
+            Risk(it, RiskStatus.COVERED)
+        }).distinct()
+        val coveredMethods = coveredRisks.map { it.method }
+        val uncoveredRisks = (risks.uncovered.filter {
+            it.method in coveredMethods
+        } + (newUncovered + modifiedUncovered).map {
+            Risk(it)
+        }).distinct()
+        store(
+            risks.copy(
+                covered = coveredRisks,
+                uncovered = uncoveredRisks
+            )
+        )
+        coveredMethods
+    }
     mapOf(
-        RiskType.NEW to new.filter { it !in covered },
-        RiskType.MODIFIED to modified.filter { it !in covered }
+        RiskType.NEW to newUncovered.filter { it !in baselineCoveredRisks },
+        RiskType.MODIFIED to modifiedUncovered.filter { it !in baselineCoveredRisks }
     )
 }
 
@@ -139,7 +162,7 @@ internal fun Map<Method, CoverMethod>.toSummary(
 )
 
 internal fun Map<Method, CoverMethod>.filterValues(
-    predicate: (Method) -> Boolean
+    predicate: (Method) -> Boolean,
 ) = filter { predicate(it.key) }.values.toList()
 
 private fun <T> Iterator<T>.nextOrNull(): T? = if (hasNext()) {

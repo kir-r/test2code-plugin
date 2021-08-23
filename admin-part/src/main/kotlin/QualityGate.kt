@@ -107,11 +107,11 @@ internal fun Plugin.checkQualityGate(stats: StatsDto): QualityGate = run {
     )
 }
 
-private fun AgentState.toStatsDto(): StatsDto? = coverContext().run {
+private suspend fun AgentState.toStatsDto(): StatsDto? = coverContext().run {
     build.toSummary(
         agentInfo.name,
         testsToRun,
-        methodChanges.risks(build.bundleCounters.all)
+        storeClient.calculateRisks(methodChanges,build.bundleCounters.all,coverContext().parentBuild?.version ?: agentInfo.buildVersion)
     )
 }.toStatsDto()
 

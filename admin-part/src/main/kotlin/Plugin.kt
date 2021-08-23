@@ -396,7 +396,11 @@ class Plugin(
     ) {
         val coverageInfoSet = calculateCoverageData(context)
         val parentCoverageCount = context.parentBuild?.let { context.parentBuild.stats.coverage } ?: zeroCount
-        val risks = context.methodChanges.risks(all)
+        val risks = storeClient.calculateRisks(
+            context.methodChanges,
+            all,
+            context.parentBuild?.version ?: buildVersion,
+        )
         val buildCoverage = (coverageInfoSet.coverage as BuildCoverage).copy(
             finishedScopesCount = scopeCount,
             riskCount = Count(
