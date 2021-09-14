@@ -37,7 +37,7 @@ internal fun Iterable<AstEntity>.toPackages(): List<JavaPackageCoverage> = run {
                         name = ast.name.weakIntern(),
                         path = path.weakIntern(),
                         totalMethodsCount = methods.count(),
-                        totalCount = methods.sumBy { it.count },
+                        totalCount = methods.sumOf { it.count },
                         methods = methods.fold(listOf()) { acc, astMethod ->
                             val desc = astMethod.toDesc()
                             acc + JavaMethodCoverage(
@@ -66,7 +66,7 @@ internal fun Iterable<PackageCounter>.toPackages(
             id = packageCoverage.coverageKey().id,
             name = packageCoverage.name,
             totalClassesCount = classes.count(),
-            totalMethodsCount = classes.sumBy { it.totalMethodsCount },
+            totalMethodsCount = classes.sumOf { it.totalMethodsCount },
             totalCount = packageCoverage.count.total,
             classes = classes
         )
@@ -105,7 +105,7 @@ private fun Collection<ClassCounter>.classTree(
             name = classname(classCoverage.name),
             path = classCoverage.path,
             totalMethodsCount = methods.count(),
-            totalCount = methods.sumBy { it.probesCount },
+            totalCount = methods.sumOf { it.probesCount },
             methods = methods,
         )
     }

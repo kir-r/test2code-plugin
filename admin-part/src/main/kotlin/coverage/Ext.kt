@@ -43,7 +43,7 @@ internal infix fun Count.subtraction(other: Count): Pair<Long, Long> = takeIf { 
             second = totalLong / gcd * otherTotalLong
         )
     }
-} ?: covered.toLong() to total.toLong()
+} ?: (covered.toLong() to total.toLong())
 
 internal fun NamedCounter.hasCoverage(): Boolean = count.covered > 0
 

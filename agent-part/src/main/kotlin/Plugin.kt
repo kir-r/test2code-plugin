@@ -212,7 +212,7 @@ fun Plugin.probeSender(
         .map(ExecDatum::toExecClassData)
         .chunked(0xffff)
         .map { chunk -> CoverDataPart(sessionId, chunk) }
-        .sumBy { message ->
+        .sumOf { message ->
             logger.trace { "send to admin-part '$message'..." }
             val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
             val compressed = Zstd.compress(encoded)

@@ -133,6 +133,7 @@ internal operator fun AgentSummary.plus(
     }
 )
 
+@Suppress("EXTENSION_SHADOWED_BY_MEMBER")
 operator fun Count.plus(other: Count): Count = copy(
     covered = covered + other.covered,
     total = total + other.total

@@ -104,4 +104,4 @@ internal fun GroupedTests.toDto() = GroupedTestsDto(
     byType = this
 )
 
-internal fun GroupedTests.totalCount(): Int = values.sumBy { it.count() }
+internal fun GroupedTests.totalCount(): Int = values.sumOf { it.count() }

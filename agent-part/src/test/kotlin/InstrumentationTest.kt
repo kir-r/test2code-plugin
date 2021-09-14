@@ -40,14 +40,14 @@ class InstrumentationTest {
     @Test
     fun `should provide coverage with the instrumented class with loops`() {
         val counter = InstrumentationForTest(ClassWithLoop::class).collectCoverage()
-        assertEquals(60, counter?.coveredCount)
+        assertEquals(67, counter?.coveredCount)
         assertEquals(0, counter?.missedCount)
     }
 
     @Test
     fun `should provide coverage for run with the instrumented class`() {
         val counter = InstrumentationForTest(TestTarget::class).collectCoverage()
-        assertEquals(39, counter?.coveredCount)
+        assertEquals(44, counter?.coveredCount)
         assertEquals(2, counter?.missedCount)
     }
 

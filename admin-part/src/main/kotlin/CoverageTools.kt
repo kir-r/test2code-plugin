@@ -77,6 +77,6 @@ private fun Iterable<Method>.toInfo(
     covered: Map<Method, CoverMethod>
 ) = MethodsInfo(
     totalCount = count(),
-    coveredCount = count { covered[it]?.count?.covered ?: 0 > 0 },
+    coveredCount = count { (covered[it]?.count?.covered ?: 0) > 0 },
     methods = mapNotNull(covered::get)
 )

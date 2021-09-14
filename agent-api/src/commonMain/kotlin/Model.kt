@@ -65,7 +65,8 @@ data class AgentSessionTestsPayload(val sessionId: String, val tests: List<Strin
 data class ExecClassData(
     val id: Long? = null,
     val className: String,
-    @Serializable(with = BitSetSerializer::class) val probes: Probes,
+    @Serializable(with = BitSetSerializer::class)
+    val probes: Probes,
     val testName: String = ""
 )
 

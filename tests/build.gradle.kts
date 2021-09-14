@@ -44,7 +44,7 @@ dependencies {
     implementation("com.epam.drill:test-framework:$drillAdminVersion") { isChanging = true }
     implementation("com.epam.drill:admin-core:$drillAdminVersion") { isChanging = true }
 
-    implementation("org.kodein.di:kodein-di-generic-jvm:$kodeinVersion")
+    implementation("org.kodein.di:kodein-di-jvm:$kodeinVersion")
 
     implementation("com.epam.drill.ktor:ktor-swagger:$ktorSwaggerVersion")
     implementation(ktor("server-test-host"))

@@ -67,8 +67,8 @@ internal fun Sequence<ExecClassData>.bundle(
                 classNames.size
             ),
             methodCount = Count(
-                classes.sumBy { c -> c.methods.count { it.count.covered > 0 } },
-                classes.sumBy { it.methods.count() }
+                classes.sumOf { c -> c.methods.count { it.count.covered > 0 } },
+                classes.sumOf { it.methods.count() }
             ),
             classes = classes
         )
@@ -77,10 +77,10 @@ internal fun Sequence<ExecClassData>.bundle(
         name = "",
         count = Count(covered, tree.totalCount),
         methodCount = packages.run {
-            Count(sumBy { it.methodCount.covered }, sumBy { it.methodCount.total })
+            Count(sumOf { it.methodCount.covered }, sumOf { it.methodCount.total })
         },
         classCount = packages.run {
-            Count(sumBy { it.classCount.covered }, sumBy { it.classCount.total })
+            Count(sumOf { it.classCount.covered }, sumOf { it.classCount.total })
         },
         packageCount = packages.run {
             Count(count { it.classCount.covered > 0 }, count())
