@@ -24,20 +24,56 @@ import java.io.*
 
 internal fun ClassCounter.parseMethods(classBytes: ByteArray): List<Method> = run {
     val classParser = ClassParser(ByteArrayInputStream(classBytes), fullName)
-    val parsedMethods = classParser.parse().run {
+    val parsedClass = classParser.parse()
+    val parsedMethods = parsedClass.run {
         methods.associateBy { signature(fullName, it.name, it.signature) }
     }
+    val lambdas = parsedMethods.filter { "lambda" in it.key }
     methods.map { m ->
         val method = parsedMethods[m.sign.weakIntern()]
+        val parser = LambdaParser(parsedClass, lambdas)
+        val hash = parser.checksum(method)
         Method(
             ownerClass = fullName.weakIntern(),
             name = methodName(m.name, fullName),
             desc = m.desc.weakIntern(),
-            hash = method.checksum()
+            hash = hash,
+            lambdasHash = parser.lambdaHash.value
         )
     }
 }
 
-private fun org.apache.bcel.classfile.Method?.checksum(): String = (this?.code?.run {
-    Utility.codeToString(code, constantPool, 0, length, false)
-} ?: "").crc64.weakIntern()
+private fun LambdaParser.checksum(
+    method: org.apache.bcel.classfile.Method?
+): String = method?.code?.run {
+    codeToString(code, constantPool, 0, length, false)
+} ?: ""
+
+/**
+ * For each lambda creates a bootstrap method, which make references back into the main constant pool.
+ * Bootstrap methods have a fixed set of arguments, the second of them is the index of the lambda method
+ * in the constant pool.
+ * For more info: https://blogs.oracle.com/javamagazine/post/behind-the-scenes-how-do-lambda-expressions-really-work-in-java
+ */
+internal fun JavaClass.getParsedBootstrapMethods() = arrayOfBootstrapMethods()
+    .map { bootstrapMethod ->
+        val (_, lambdaMethodIndex, _) = bootstrapMethod.bootstrapArguments
+        lambdaMethodIndex
+    }.mapNotNull { getConstant(it) as? ConstantMethodHandle }
+    .map { getConstant(it.referenceIndex) as ConstantCP }
+    .map {
+        val classIndex = getConstant(it.classIndex) as ConstantClass
+        val nameAndTypeIndex = getConstant(it.nameAndTypeIndex) as ConstantNameAndType
+        classIndex to nameAndTypeIndex
+    }.map { (classIndex, nameAndTypeIndex) ->
+        val classFullName = (getConstant(classIndex.nameIndex) as ConstantUtf8).bytes
+        val methodName = (getConstant(nameAndTypeIndex.nameIndex) as ConstantUtf8).bytes
+        val signature = (getConstant(nameAndTypeIndex.signatureIndex) as ConstantUtf8).bytes
+        signature(classFullName, methodName, signature)
+    }
+
+private fun JavaClass.getConstant(it: Int) = constantPool.getConstant(it)
+
+private fun JavaClass.arrayOfBootstrapMethods() = attributes
+    .filterIsInstance<BootstrapMethods>()
+    .firstOrNull()?.bootstrapMethods ?: emptyArray()

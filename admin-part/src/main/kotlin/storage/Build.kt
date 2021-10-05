@@ -46,12 +46,19 @@ class StoredBuildTests(
 internal suspend fun StoreClient.loadClassData(
     version: String,
 ): ClassData? = findById<StoredClassData>(version)?.run {
-    data
+    val lambdaHash = findById(version) ?: LambdaHash(version)
+    data.copy(methods = data.methods.map {
+        it.copy(
+            lambdasHash = lambdaHash.hash[it.key] ?: emptyMap(),
+        )
+    })
 }
 
 internal suspend fun ClassData.store(storage: StoreClient) {
     trackTime("Store class data") {
+        val hash = methods.associate { it.key to it.lambdasHash }
         storage.store(StoredClassData(buildVersion, this))
+        storage.store(LambdaHash(buildVersion, hash))
     }
 }
 
