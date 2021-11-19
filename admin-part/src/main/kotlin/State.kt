@@ -25,7 +25,6 @@ import com.epam.drill.plugins.test2code.util.*
 import com.epam.kodux.*
 import com.epam.kodux.util.*
 import kotlinx.atomicfu.*
-import org.jacoco.core.internal.data.*
 
 /**
  * Agent state.
@@ -118,33 +117,7 @@ internal class AgentState(
                 }
                 is NoData -> {
                     val classBytes = adminData.loadClassBytes(agentInfo.buildVersion)
-                    logger.info { "initializing noData with classBytes size ${classBytes.size}..." }
-                    val probeIds: Map<String, Long> = classBytes.mapValues { CRC64.classId(it.value) }
-                    val bundleCoverage = classBytes.keys.bundle(classBytes, probeIds)
-                    val sortedPackages = bundleCoverage.packages.asSequence().run {
-                        mapNotNull { pc ->
-                            val classes = pc.classes.filter { it.methods.any() }
-                            if (classes.any()) {
-                                pc.copy(classes = classes.sortedBy(ClassCounter::name))
-                            } else null
-                        }.sortedBy(PackageCounter::name)
-                    }.toList()
-                    val classCounters = sortedPackages.asSequence().flatMap {
-                        it.classes.asSequence()
-                    }
-                    val groupedMethods = classCounters.associate { classCounter ->
-                        val name = classCounter.fullName
-                        val bytes = classBytes.getValue(name)
-                        name to classCounter.parseMethods(bytes).sorted()
-                    }
-                    val methods = groupedMethods.flatMap { it.value }
-                    val packages = sortedPackages.toPackages(groupedMethods)
-                    PackageTree(
-                        totalCount = packages.sumBy { it.totalCount },
-                        totalMethodCount = groupedMethods.values.sumBy { it.count() },
-                        totalClassCount = packages.sumBy { it.totalClassesCount },
-                        packages = packages
-                    ).toClassData(methods = methods, probeIds = probeIds)
+                    classBytes.parseClassBytes().toClassData()
                 }
                 else -> data
             } as ClassData
@@ -379,4 +352,8 @@ internal class AgentState(
             logger.debug { "(buildVersion=${agentInfo.buildVersion}) Toggled baseline $baseline->$newBaseline" }
         }?.version
     }
+
+    private fun ParsedClassBytes.toClassData() = packageTree.toClassData(
+        methods = methods, probeIds = probeIds
+    )
 }

@@ -23,7 +23,7 @@ import kotlinx.serialization.*
 import kotlin.jvm.Transient
 
 @Serializable
-internal data class Method(
+data class Method(
     val ownerClass: String,
     val name: String,
     val desc: String,
