@@ -17,7 +17,9 @@ package com.epam.drill.plugins.test2code
 
 import com.epam.drill.instrumentation.data.*
 import com.epam.drill.plugins.test2code.InstrumentationForTest.Companion.sessionId
+import org.jacoco.core.internal.data.*
 import org.junit.jupiter.api.*
+import java.io.*
 import kotlin.test.*
 import kotlin.test.Test
 
@@ -28,6 +30,18 @@ class InstrumentationTest {
         val instrumentation = InstrumentationForTest(TestTarget::class)
         val instrumentedBytes = instrumentation.instrumentClass()
         assertTrue { instrumentedBytes.count() > instrumentation.originalBytes.count() }
+    }
+
+    @Test
+    fun `example test for checking probes`() {
+        val classname = "OwnerController.class"
+        val originalBytes = this::class.java.classLoader.getResourceAsStream(classname)?.readBytes() ?: byteArrayOf()
+        val instrumented = InstrumentationForTest.instrument(
+            "org.springframework.samples.petclinic.owner.$classname",
+            CRC64.classId(originalBytes),
+            originalBytes
+        )!!
+        File("OwnerControllerInstr.class").writeBytes(instrumented)
     }
 
     @Test

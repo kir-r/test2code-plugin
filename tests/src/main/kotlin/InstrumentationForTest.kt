@@ -39,11 +39,12 @@ class InstrumentationForTest(kClass: KClass<*>) {
                 override fun invoke(): String = sessionId
 
             }
+
+        val instrument = instrumenter(TestProbeArrayProvider, "".namedLogger(appender = NopLogAppender))
     }
 
     object TestProbeArrayProvider : SimpleSessionProbeArrayProvider(instrContextStub)
 
-    val instrument = instrumenter(TestProbeArrayProvider, "".namedLogger(appender = NopLogAppender))
 
     val memoryClassLoader = MemoryClassLoader()
 
